@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import EventCard from "../../components/EventCard";
 import Select from "../../components/Select";
 import { useData } from "../../contexts/DataContext";
@@ -14,12 +14,11 @@ const EventList = () => {
   const [type, setType] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredEvents = (
-    (!type ? data?.events : data?.events) || []
-  ).filter((event, index) => {
+  const filteredEvents = (data?.events || []).filter((event, index) => {
     if (
       (currentPage - 1) * PER_PAGE <= index &&
-      PER_PAGE * currentPage > index
+      PER_PAGE * currentPage > index &&
+      (!type || event.type === type)
     ) {
       return true;
     }
@@ -30,20 +29,32 @@ const EventList = () => {
     setCurrentPage(1);
     setType(evtType === type ? null : evtType);
   };
-  
+
+  // Utilisez un Set pour garantir des valeurs uniques
+  const typeListSet = new Set(data?.events.map((event) => event.type));
+
+  // Ajoutez "Toutes" à la liste seulement si elle n'est pas déjà présente
+  if (!typeListSet.has("Toutes")) {
+    typeListSet.add("Toutes");
+  }
+
+  // Convertissez le Set en un tableau
+  const typeList = Array.from(typeListSet);
+
+  // Calculez le nombre de pages ici
   const pageNumber = Math.floor((filteredEvents?.length || 0) / PER_PAGE) + 1;
-  const typeList = new Set(data?.events.map((event) => event.type));
+
   return (
     <>
-      {error && <div>An error occured</div>}
+      {error && <div>An error occurred</div>}
       {data === null ? (
         "loading"
       ) : (
         <>
           <h3 className="SelectTitle">Catégories</h3>
           <Select
-            selection={Array.from(typeList)}
-            onChange={(value) => (value ? changeType(value) : changeType(null))}
+            selection={typeList}
+            onChange={(value) => changeType(value === "Toutes" ? null : value)}
           />
           <div id="events" className="ListContainer">
             {filteredEvents.map((event) => (
